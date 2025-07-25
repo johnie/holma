@@ -1,0 +1,59 @@
+{
+    "name": "holma",
+    "version": "0.0.0",
+    "description": "Simple micro templating with Standard Schema validation",
+    "main": "dist/index.js",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "typings": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "type": "module",
+    "scripts": {
+        "build": "tsup",
+        "ci": "npm run build && npm run check-format && npm run check-exports && npm run lint && npm run test",
+        "lint": "tsc",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "format": "biome format --write ./src",
+        "check-format": "biome check --write ./src",
+        "check-exports": "attw --pack .",
+        "local-release": "npm run ci && changeset version && changeset publish",
+        "release": "npm run ci && changeset publish"
+    },
+    "keywords": [
+        "module"
+    ],
+    "author": "Johnie Hjelm <johnie@hjelm.im>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/johnie/holma.git"
+    },
+    "bugs": {
+        "url": "https://github.com/johnie/holma/issues"
+    },
+    "homepage": "https://github.com/johnie/holma#readme",
+    "devDependencies": {
+        "@arethetypeswrong/cli": "^0.18.2",
+        "@biomejs/biome": "^2.1.2",
+        "@changesets/changelog-github": "^0.5.1",
+        "@changesets/cli": "^2.29.5",
+        "@types/node": "^24.1.0",
+        "tsup": "^8.5.0",
+        "typescript": "^5.8.3",
+        "valibot": "^1.1.0",
+        "vitest": "^3.2.4",
+        "zod": "^4.0.5"
+    },
+    "dependencies": {
+        "@standard-schema/spec": "^1.0.0",
+        "@standard-schema/utils": "^0.3.0",
+        "escape-goat": "^4.0.0"
+    }
+}
