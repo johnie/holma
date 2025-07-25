@@ -1,6 +1,6 @@
 {
     "name": "holma",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "description": "Simple micro templating with Standard Schema validation",
     "main": "dist/index.js",
     "exports": {
