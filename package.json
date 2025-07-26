@@ -49,7 +49,7 @@
         "typescript": "^5.8.3",
         "valibot": "^1.1.0",
         "vitest": "^3.2.4",
-        "zod": "^4.0.5"
+        "zod": "^4.0.10"
     },
     "dependencies": {
         "@standard-schema/spec": "^1.0.0",
