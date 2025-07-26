@@ -48,7 +48,11 @@ const data = {
   message: '<script>alert("xss")</script>',
 };
 
-const result = await holma(template, schema, data);
+const result = await holma({
+  template,
+  schema,
+  data,
+});
 console.log(result);
 // Output: Hello World! Your message: &lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;
 ```
@@ -73,18 +77,28 @@ The main function for template rendering with validation.
 ```typescript
 import { holma } from "holma";
 
-const result = await holma(template, schema, data, options);
+const result = await holma({
+  template,
+  schema,
+  data,
+  options,
+});
 ```
 
 #### Function Signature
 
 ```typescript
-async function holma<T extends StandardSchemaV1>(
-  template: string,
-  schema: T,
-  data: StandardSchemaV1.InferInput<T>,
-  options?: StureOptions
-): Promise<string>;
+async function holma<T extends StandardSchemaV1>({
+  template,
+  schema,
+  data,
+  options = {},
+}: {
+  template: string;
+  schema: T;
+  data: StandardSchemaV1.InferInput<T>;
+  options?: HolmaOptions;
+}): Promise<string>;
 ```
 
 #### Parameters
@@ -97,7 +111,7 @@ async function holma<T extends StandardSchemaV1>(
 #### Options
 
 ```typescript
-interface StureOptions {
+interface HolmaOptions {
   ignoreMissing?: boolean; // Default: false
   transform?: (args: { value: unknown; key: string }) => unknown;
 }
@@ -113,7 +127,11 @@ interface StureOptions {
 Use `{key}` for raw value replacement without HTML escaping:
 
 ```typescript
-const result = await holma("Hello {name}!", schema, { name: "World" });
+const result = await holma({
+  template: "Hello {name}!",
+  schema,
+  data: { name: "World" },
+});
 // Output: Hello World!
 ```
 
@@ -122,8 +140,10 @@ const result = await holma("Hello {name}!", schema, { name: "World" });
 Use `{{key}}` for HTML-escaped values to prevent XSS:
 
 ```typescript
-const result = await holma("Content: {{html}}", schema, {
-  html: '<script>alert("xss")</script>',
+const result = await holma({
+  template: "Content: {{html}}",
+  schema,
+  data: { html: '<script>alert("xss")</script>' },
 });
 // Output: Content: &lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;
 ```
@@ -141,10 +161,14 @@ const schema = z.object({
   }),
 });
 
-const result = await holma("Hello {user.profile.name}!", schema, {
-  user: {
-    profile: {
-      name: "Alice",
+const result = await holma({
+  template: "Hello {user.profile.name}!",
+  schema,
+  data: {
+    user: {
+      profile: {
+        name: "Alice",
+      },
     },
   },
 });
@@ -156,16 +180,20 @@ const result = await holma("Hello {user.profile.name}!", schema, {
 Combine raw and escaped values in the same template:
 
 ```typescript
-const result = await holma("Hello {name}, your bio: {{bio}}", schema, {
-  name: "John",
-  bio: "<strong>Developer</strong>",
+const result = await holma({
+  template: "Hello {name}, your bio: {{bio}}",
+  schema,
+  data: {
+    name: "John",
+    bio: "<strong>Developer</strong>",
+  },
 });
 // Output: Hello John, your bio: &lt;strong&gt;Developer&lt;/strong&gt;
 ```
 
 ## Schema Validation
 
-Sture supports any validation library that implements the [Standard Schema](https://standardschema.dev/) specification, including Zod, Valibot, and Effect Schema.
+Holma supports any validation library that implements the [Standard Schema](https://standardschema.dev/) specification, including Zod, Valibot, and Effect Schema.
 
 ### With Zod
 
@@ -196,7 +224,11 @@ const userData = {
   isActive: true,
 };
 
-const result = await holma(template, UserSchema, userData);
+const result = await holma({
+  template,
+  schema: UserSchema,
+  data: userData,
+});
 console.log(result);
 // Output: Fully validated and rendered HTML with proper escaping
 ```
@@ -223,11 +255,15 @@ const template = `
   </article>
 `;
 
-const result = await holma(template, ProductSchema, {
-  title: "Amazing Product",
-  price: 29.99,
-  description: "This product has <em>amazing</em> features!",
-  tags: ["new", "featured", "sale"],
+const result = await holma({
+  template,
+  schema: ProductSchema,
+  data: {
+    title: "Amazing Product",
+    price: 29.99,
+    description: "This product has <em>amazing</em> features!",
+    tags: ["new", "featured", "sale"],
+  },
 });
 ```
 
@@ -296,7 +332,11 @@ const BlogPostSchema: StandardSchemaV1<Record<string, unknown>, BlogPost> = {
   },
 };
 
-const result = await holma(blogTemplate, BlogPostSchema, rawData);
+const result = await holma({
+  template: blogTemplate,
+  schema: BlogPostSchema,
+  data: rawData,
+});
 ```
 
 ## Options
@@ -308,18 +348,22 @@ Control how undefined values are handled:
 ```typescript
 // Default behavior - throws MissingValueError
 try {
-  await holma("Hello {name}!", schema, {});
+  await holma({
+    template: "Hello {name}!",
+    schema,
+    data: {},
+  });
 } catch (error) {
   console.log(error instanceof MissingValueError); // true
 }
 
 // Ignore missing values - leaves placeholder unchanged
-const result = await holma(
-  "Hello {name}!",
+const result = await holma({
+  template: "Hello {name}!",
   schema,
-  {},
-  { ignoreMissing: true }
-);
+  data: {},
+  options: { ignoreMissing: true },
+});
 console.log(result); // "Hello {name}!"
 ```
 
@@ -340,12 +384,12 @@ const options = {
   },
 };
 
-const result = await holma(
-  "Product: {name}, Price: {price}",
+const result = await holma({
+  template: "Product: {name}, Price: {price}",
   schema,
-  { name: "widget", price: 29.99 },
-  options
-);
+  data: { name: "widget", price: 29.99 },
+  options,
+});
 // Output: Product: WIDGET, Price: $29.99
 ```
 
@@ -372,22 +416,22 @@ const options = {
   },
 };
 
-const result = await holma(
-  "User {username} paid {currency} at {timestamp}",
+const result = await holma({
+  template: "User {username} paid {currency} at {timestamp}",
   schema,
-  {
+  data: {
     username: "johndoe",
     currency: 99.5,
     timestamp: "2024-01-15T10:30:00Z",
   },
-  options
-);
+  options,
+});
 // Output: User @johndoe paid $99.50 at 1/15/2024, 10:30:00 AM
 ```
 
 ## Error Handling
 
-Sture provides detailed error information for both validation and template processing errors.
+Holma provides detailed error information for both validation and template processing errors.
 
 ### MissingValueError
 
@@ -397,7 +441,11 @@ Thrown when a placeholder value is undefined and `ignoreMissing` is false:
 import { MissingValueError } from "holma";
 
 try {
-  await holma("Hello {name}!", schema, {});
+  await holma({
+    template: "Hello {name}!",
+    schema,
+    data: {},
+  });
 } catch (error) {
   if (error instanceof MissingValueError) {
     console.log(error.message); // "Missing a value for the placeholder: name"
@@ -419,7 +467,11 @@ const schema = z.object({
 });
 
 try {
-  await holma("Age: {age}", schema, { age: 16 });
+  await holma({
+    template: "Age: {age}",
+    schema,
+    data: { age: 16 },
+  });
 } catch (error) {
   if (error instanceof SchemaError) {
     console.log("Validation failed:", error.issues);
@@ -463,7 +515,11 @@ const pageData = {
   author: "John Doe",
 };
 
-const result = await holma(htmlTemplate, PageSchema, pageData);
+const result = await holma({
+  template: htmlTemplate,
+  schema: PageSchema,
+  data: pageData,
+});
 // Produces safe HTML with proper escaping for title, heading, and content
 // but raw output for author name
 ```
@@ -532,7 +588,11 @@ const emailData = {
   },
 };
 
-const result = await holma(emailTemplate, EmailSchema, emailData);
+const result = await holma({
+  template: emailTemplate,
+  schema: EmailSchema,
+  data: emailData,
+});
 ```
 
 ### Configuration Template with Transformations
@@ -609,7 +669,12 @@ const configData = {
   timestamp: null, // Will be transformed to current timestamp
 };
 
-const result = await holma(configTemplate, ConfigSchema, configData, options);
+const result = await holma({
+  template: configTemplate,
+  schema: ConfigSchema,
+  data: configData,
+  options,
+});
 ```
 
 ### Markdown Template with Code Blocks
@@ -704,12 +769,12 @@ const docData = {
   ],
 };
 
-const result = await holma(
-  markdownTemplate,
-  DocumentationSchema,
-  docData,
-  options
-);
+const result = await holma({
+  template: markdownTemplate,
+  schema: DocumentationSchema,
+  data: docData,
+  options,
+});
 ```
 
 ### Complex Nested Template
@@ -863,12 +928,17 @@ const blogData = {
   },
 };
 
-const result = await holma(blogTemplate, BlogPostSchema, blogData, options);
+const result = await holma({
+  template: blogTemplate,
+  schema: BlogPostSchema,
+  data: blogData,
+  options,
+});
 ```
 
 ## TypeScript Integration
 
-Sture provides excellent TypeScript support with full type inference when using schemas:
+Holma provides excellent TypeScript support with full type inference when using schemas:
 
 ```typescript
 import { z } from "zod";
@@ -904,7 +974,11 @@ const renderUserProfile = async (userData: UserInput): Promise<string> => {
   `;
 
   // Full type safety with schema validation
-  return await holma(template, UserSchema, userData);
+  return await holma({
+    template,
+    schema: UserSchema,
+    data: userData,
+  });
 };
 
 // TypeScript will catch type errors at compile time
@@ -929,29 +1003,38 @@ Create reusable template functions with TypeScript generics:
 
 ```typescript
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import { holma, type StureOptions } from "holma";
+import { holma, type HolmaOptions } from "holma";
 
-async function renderTemplate<T extends StandardSchemaV1>(
-  template: string,
-  schema: T,
-  data: StandardSchemaV1.InferInput<T>,
-  options?: StureOptions
-): Promise<string> {
-  return await holma(template, schema, data, options);
+async function renderTemplate<T extends StandardSchemaV1>({
+  template,
+  schema,
+  data,
+  options,
+}: {
+  template: string;
+  schema: T;
+  data: StandardSchemaV1.InferInput<T>;
+  options?: HolmaOptions;
+}): Promise<string> {
+  return await holma({ template, schema, data, options });
 }
 
 // Usage with different schemas
-const userResult = await renderTemplate(userTemplate, UserSchema, userData);
-const productResult = await renderTemplate(
-  productTemplate,
-  ProductSchema,
-  productData
-);
+const userResult = await renderTemplate({
+  template: userTemplate,
+  schema: UserSchema,
+  data: userData,
+});
+const productResult = await renderTemplate({
+  template: productTemplate,
+  schema: ProductSchema,
+  data: productData,
+});
 ```
 
 ## Performance
 
-Sture is designed to be fast and lightweight:
+Holma is designed to be fast and lightweight:
 
 - **Minimal dependencies** - Only essential dependencies for core functionality
 - **Efficient regex operations** - Optimized patterns that avoid backtracking
@@ -975,9 +1058,9 @@ const cachedSchema = SimpleSchema; // Reuse schema instances
 
 // Batch processing
 const templates = await Promise.all([
-  holma(template1, schema, data1),
-  holma(template2, schema, data2),
-  holma(template3, schema, data3),
+  holma({ template: template1, schema, data: data1 }),
+  holma({ template: template2, schema, data: data2 }),
+  holma({ template: template3, schema, data: data3 }),
 ]);
 ```
 
@@ -1000,14 +1083,14 @@ const data = {
 
 console.time("holma-render");
 for (let i = 0; i < 1000; i++) {
-  await holma(template, schema, data);
+  await holma({ template, schema, data });
 }
 console.timeEnd("holma-render");
 ```
 
 ## Security
 
-Sture includes built-in security features to prevent common web vulnerabilities:
+Holma includes built-in security features to prevent common web vulnerabilities:
 
 ### XSS Prevention
 
@@ -1019,11 +1102,11 @@ const dangerousData = {
   safeContent: "Regular content",
 };
 
-const result = await holma(
-  "User input: {{userInput}}, Safe: {safeContent}",
+const result = await holma({
+  template: "User input: {{userInput}}, Safe: {safeContent}",
   schema,
-  dangerousData
-);
+  data: dangerousData,
+});
 // Output: User input: &lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;, Safe: Regular content
 ```
 
@@ -1041,14 +1124,21 @@ const partialData = {
 
 // This won't crash, but will throw MissingValueError
 try {
-  await holma("Profile: {user.profile.bio}", schema, partialData);
+  await holma({
+    template: "Profile: {user.profile.bio}",
+    schema,
+    data: partialData,
+  });
 } catch (error) {
   // Handle missing data gracefully
 }
 
 // Or ignore missing values
-const result = await holma("Profile: {user.profile.bio}", schema, partialData, {
-  ignoreMissing: true,
+const result = await holma({
+  template: "Profile: {user.profile.bio}",
+  schema,
+  data: partialData,
+  options: { ignoreMissing: true },
 });
 // Output: Profile: {user.profile.bio}
 ```
